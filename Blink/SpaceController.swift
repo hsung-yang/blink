@@ -725,6 +725,7 @@ extension SpaceController {
     case .configShow: showConfigAction()
     case .snippetsShow: showSnippetsAction()
     case .scratchShow: showScratchAction()
+    case .connectionsShow: showConnectionsAction()
     case .toggleQuickActions: toggleQuickActionsAction()
     case .toggleGeoTrack: toggleGeoTrack()
     case .tab1: _moveToShell(idx: 0)
@@ -761,6 +762,12 @@ extension SpaceController {
     case .zoomOut: currentTerm()?.termView.decreaseFontSize()
     case .zoomReset: currentTerm()?.termView.resetFontSize()
     case .hideKeyboard: KBTracker.shared.input?.resignFirstResponder()
+    case .splitHorizontal: _splitCurrentPane(.horizontal)
+    case .splitVertical:   _splitCurrentPane(.vertical)
+    case .splitClose:      _closeSplitPane()
+    case .splitFocusNext:  _currentSplitController()?.focusNext()
+    case .splitFocusPrev:  _currentSplitController()?.focusPrev()
+    case .shortcutsHelp:   _showShortcutsHelp()
 
     }
   }
@@ -785,6 +792,26 @@ extension SpaceController {
 
   @objc func newShellAction() {
     _newShellAction()
+  }
+
+  // MARK: Split Pane Actions
+
+  private func _currentSplitController() -> SplitPaneController? {
+    return _viewportsController.viewControllers?.first as? SplitPaneController
+  }
+
+  private func _splitCurrentPane(_ direction: SplitDirection) {
+    if let split = _currentSplitController() {
+      split.splitActive(direction)
+    } else if let term = currentTerm() {
+      let split = SplitPaneController(term: term)
+      _viewportsController.setViewControllers([split], direction: .forward, animated: false)
+      split.splitActive(direction)
+    }
+  }
+
+  private func _closeSplitPane() {
+    _currentSplitController()?.closeActive()
   }
 
   @objc func closeShellAction() {
@@ -938,6 +965,18 @@ extension SpaceController {
                                       errorHandler: nil)
   }
   
+  private func _showShortcutsHelp() {
+    DispatchQueue.main.async {
+      let ctrl = UIHostingController(rootView: ShortcutsHelpView())
+      ctrl.modalPresentationStyle = .formSheet
+      if let sheet = ctrl.sheetPresentationController {
+        sheet.detents = [.medium(), .large()]
+        sheet.prefersGrabberVisible = true
+      }
+      self.present(ctrl, animated: true)
+    }
+  }
+
   @objc func showConfigAction() {
     if let shadowWindow = ShadowWindow.shared,
       view.window == shadowWindow {
@@ -996,6 +1035,22 @@ extension SpaceController {
     // }
   }
 
+  @objc func showConnectionsAction() {
+    DispatchQueue.main.async {
+      self.currentTerm()?.resignInput()
+      let view = ConnectionsView { [weak self] command in
+        self?._newShellAction(command: command)
+      }
+      let ctrl = UIHostingController(rootView: view)
+      ctrl.modalPresentationStyle = .formSheet
+      if let sheet = ctrl.sheetPresentationController {
+        sheet.detents = [.medium(), .large()]
+        sheet.prefersGrabberVisible = true
+      }
+      self.present(ctrl, animated: true)
+    }
+  }
+
   private func _toggleQuickActionActionWith(receiver: SpaceController) {
     if let menu = _blinkMenu {
       _blinkMenu = nil
@@ -1009,7 +1064,7 @@ extension SpaceController {
       self.view.addSubview(menu.tapToCloseView)
       
       var ids: [BlinkActionID] = []
-      ids.append(contentsOf:  [.snippets, .tabClose, .tabCreate])
+      ids.append(contentsOf:  [.connections, .snippets, .tabClose, .tabCreate])
       
       if DeviceInfo.shared().hasCorners {
         ids.append(contentsOf:  [.layoutMenu])

@@ -78,7 +78,8 @@ function term_setupDefaults() {
   term_set('audible-bell-sound', '');
   term_set('receive-encoding', 'raw'); // we are UTF8
   term_set('allow-images-inline', true); // need to make it work
-  term_set('scroll-wheel-may-send-arrow-keys', true)
+  term_set('scroll-wheel-may-send-arrow-keys', true);
+  // scrollback limit patched directly in hterm_all.min.js (50k rows)
 }
 
 function term_processKB(str) {

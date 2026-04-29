@@ -217,7 +217,16 @@ class KeyShortcut: ObservableObject, Codable, Identifiable {
 
       KeyShortcut(.configShow, .command, ","),
       Self.snippetsShowShortcut,
-      Self.scratchShowShortcut
+      Self.scratchShowShortcut,
+
+      // Split pane shortcuts (iTerm2-style)
+      KeyShortcut(.splitHorizontal, .command, "d"),
+      KeyShortcut(.splitVertical, [.command, .shift], "d"),
+      KeyShortcut(.splitClose, [.command, .shift], "w"),
+      KeyShortcut(.splitFocusNext, [.command], "]"),
+      KeyShortcut(.splitFocusPrev, [.command], "["),
+
+      KeyShortcut(.shortcutsHelp, .command, "/"),
     ]
   }
 }

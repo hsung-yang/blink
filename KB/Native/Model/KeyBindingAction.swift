@@ -69,6 +69,13 @@ enum Command: String, Codable, CaseIterable {
   case toggleQuickActions
   case toggleGeoTrack
   case hideKeyboard
+  case splitHorizontal
+  case splitVertical
+  case splitClose
+  case splitFocusNext
+  case splitFocusPrev
+  case connectionsShow
+  case shortcutsHelp
 
   var title: String {
     switch self {
@@ -111,6 +118,13 @@ enum Command: String, Codable, CaseIterable {
     case .toggleQuickActions:     return "Toggle Quick Actions"
     case .toggleGeoTrack:         return "Toggle Geo Track"
     case .hideKeyboard:           return "Hide Keyboard"
+    case .splitHorizontal:        return "Split Horizontally"
+    case .splitVertical:          return "Split Vertically"
+    case .splitClose:             return "Close Split Pane"
+    case .splitFocusNext:         return "Focus Next Pane"
+    case .splitFocusPrev:         return "Focus Previous Pane"
+    case .connectionsShow:        return "Show Connections"
+    case .shortcutsHelp:          return "Show Keyboard Shortcuts"
     }
   }
 }

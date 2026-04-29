@@ -45,6 +45,7 @@ const BlinkActionID BlinkActionChangeLayout = @"blink-change-layout";
 const BlinkActionID BlinkActionToggleLayoutLock = @"blink-toggle-layout-lock";
 const BlinkActionID BlinkActionToggleGeoTrack = @"blink-toggle-geo-track";
 const BlinkActionID BlinkActionToggleCompactActions = @"blink-toggle-compact-actions";
+const BlinkActionID BlinkActionConnections = @"blink-connections";
 const BlinkActionID BlinkActionLayoutFill = @"blink-layout-fill";
 const BlinkActionID BlinkActionLayoutFit = @"blink-layout-fit";
 const BlinkActionID BlinkActionLayoutCover = @"blink-layout-cover";
@@ -315,6 +316,15 @@ const CGFloat MENU_PADDING = 10.0;
             actionWithTitle:noTitle ? @"" : @"Create"
             image:[UIImage systemImageNamed:@"plus.rectangle.on.rectangle"] identifier:elementID handler:^(__kindof UIAction * _Nonnull action) {
       [[delegate spaceController] runShellSessionIntentWithCommand:@""];
+    }];
+  }
+
+  if (elementID == BlinkActionConnections) {
+    return [UIAction
+            actionWithTitle:noTitle ? @"" : @"Connect"
+            image:[UIImage systemImageNamed:@"server.rack"]
+            identifier:elementID handler:^(__kindof UIAction * _Nonnull action) {
+      [[delegate spaceController] showConnectionsAction];
     }];
   }
   

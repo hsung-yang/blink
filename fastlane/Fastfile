@@ -1,0 +1,71 @@
+default_platform(:ios)
+
+# App Store Connect API key — generate at appstoreconnect.apple.com → Users → Keys
+# Store the .p8 file at ~/.appstoreconnect/AuthKey_<KEY_ID>.p8
+# Set KEY_ID and ISSUER_ID as env vars or fill in below.
+def asc_api_key
+  app_store_connect_api_key(
+    key_id:        ENV["ASC_KEY_ID"],
+    issuer_id:     ENV["ASC_ISSUER_ID"],
+    key_filepath:  ENV["ASC_KEY_FILEPATH"] || File.expand_path("~/.appstoreconnect/AuthKey_#{ENV['ASC_KEY_ID']}.p8"),
+    duration:      1200,
+    in_house:      false
+  )
+end
+
+platform :ios do
+  desc "Build iOS archive and upload to TestFlight"
+  lane :beta_ipad do
+    api_key = asc_api_key
+    build_ios_app(
+      scheme:             "Blink",
+      project:            "Blink.xcodeproj",
+      configuration:      "Release",
+      export_method:      "app-store",
+      export_options: {
+        teamID:              "95R6AQG32G",
+        uploadBitcode:       false,
+        compileBitcode:      false,
+        signingStyle:        "automatic"
+      },
+      output_directory:  "build",
+      output_name:       "RemoteTerm-iOS.ipa"
+    )
+    upload_to_testflight(
+      api_key:                           api_key,
+      skip_waiting_for_build_processing: false,
+      changelog:                         "Internal beta build"
+    )
+  end
+
+  desc "Build Mac (Designed for iPad) archive and upload to TestFlight"
+  lane :beta_mac do
+    api_key = asc_api_key
+    build_ios_app(
+      scheme:             "Blink",
+      project:            "Blink.xcodeproj",
+      configuration:      "Release",
+      destination:        "generic/platform=macOS,variant=Mac Designed for iPad",
+      export_method:      "app-store",
+      export_options: {
+        teamID:              "95R6AQG32G",
+        uploadBitcode:       false,
+        compileBitcode:      false,
+        signingStyle:        "automatic"
+      },
+      output_directory:   "build",
+      output_name:        "RemoteTerm-Mac.pkg"
+    )
+    upload_to_testflight(
+      api_key:                           api_key,
+      skip_waiting_for_build_processing: false,
+      changelog:                         "Internal beta build — Mac (Designed for iPad)"
+    )
+  end
+
+  desc "Upload both iOS and Mac builds to TestFlight"
+  lane :beta_all do
+    beta_ipad
+    beta_mac
+  end
+end

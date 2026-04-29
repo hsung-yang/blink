@@ -46,6 +46,7 @@ fileprivate var attachedShortcuts: [UIKeyCommand] = []
     case tabNew
     case tabClose
     case configShow
+    case connectionsShow
   }
 
   enum EditMenu: String, CaseIterable {

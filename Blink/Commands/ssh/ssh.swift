@@ -298,9 +298,10 @@ public func blink_ssh_main(argc: Int32, argv: Argv) -> Int32 {
       self.device.rawMode = true
     }
 
-    // TERM is explicitely added
+    // TERM and COLORTERM are explicitly added
     var envVars = envVars
     envVars["TERM"] = String(cString: getenv("TERM"))
+    envVars["COLORTERM"] = String(cString: getenv("COLORTERM"))
 
     let session: AnyPublisher<SSH.Stream, Error>
     if let command = command {
