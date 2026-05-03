@@ -22,7 +22,7 @@ class SplitPaneController: UIViewController {
   private(set) var activeTerm: TermController?
 
   // Root of the split tree
-  private var _root: SplitNode
+  private var _root: SplitNode<TermController>
 
   init(term: TermController) {
     _root = SplitNode.leaf(term)
@@ -115,7 +115,7 @@ class SplitPaneController: UIViewController {
     _activateTerm(activeTerm)
   }
 
-  private func _installNode(_ node: SplitNode, in container: UIView) {
+  private func _installNode(_ node: SplitNode<TermController>, in container: UIView) {
     switch node {
     case .leaf(let term):
       addChild(term)
@@ -170,7 +170,7 @@ class SplitPaneController: UIViewController {
         divider.onDrag = { [weak self, weak container] delta in
           guard let self, let container else { return }
           let total = container.bounds.width
-          let newRatio = max(0.15, min(0.85, ratio + delta / total))
+          let newRatio = SplitNode<TermController>.clampedRatio(ratio + delta / total)
           self._root = self._root.updateRatio(forNode: node, ratio: newRatio)
           self._relayout()
         }
@@ -201,7 +201,7 @@ class SplitPaneController: UIViewController {
         divider.onDrag = { [weak self, weak container] delta in
           guard let self, let container else { return }
           let total = container.bounds.height
-          let newRatio = max(0.15, min(0.85, ratio + delta / total))
+          let newRatio = SplitNode<TermController>.clampedRatio(ratio + delta / total)
           self._root = self._root.updateRatio(forNode: node, ratio: newRatio)
           self._relayout()
         }
@@ -215,18 +215,22 @@ class SplitPaneController: UIViewController {
 
 // MARK: - SplitNode (recursive tree)
 
-indirect enum SplitNode {
-  case leaf(TermController)
-  case split(SplitNode, SplitNode, SplitDirection, CGFloat) // ratio 0..1
+indirect enum SplitNode<Leaf: AnyObject> {
+  case leaf(Leaf)
+  case split(SplitNode<Leaf>, SplitNode<Leaf>, SplitDirection, CGFloat) // ratio 0..1
 
-  func allLeaves() -> [TermController] {
+  static func clampedRatio(_ r: CGFloat) -> CGFloat {
+    max(0.15, min(0.85, r))
+  }
+
+  func allLeaves() -> [Leaf] {
     switch self {
     case .leaf(let t): return [t]
     case .split(let a, let b, _, _): return a.allLeaves() + b.allLeaves()
     }
   }
 
-  func split(leaf target: TermController, with newTerm: TermController, direction: SplitDirection) -> SplitNode {
+  func split(leaf target: Leaf, with newTerm: Leaf, direction: SplitDirection) -> SplitNode<Leaf> {
     switch self {
     case .leaf(let t) where t === target:
       return .split(.leaf(t), .leaf(newTerm), direction, 0.5)
@@ -241,7 +245,7 @@ indirect enum SplitNode {
     }
   }
 
-  func close(leaf target: TermController) -> SplitNode? {
+  func close(leaf target: Leaf) -> SplitNode<Leaf>? {
     switch self {
     case .leaf(let t): return t === target ? nil : self
     case .split(let a, let b, let dir, let ratio):
@@ -256,12 +260,11 @@ indirect enum SplitNode {
     }
   }
 
-  func updateRatio(forNode target: SplitNode, ratio newRatio: CGFloat) -> SplitNode {
+  func updateRatio(forNode target: SplitNode<Leaf>, ratio newRatio: CGFloat) -> SplitNode<Leaf> {
     switch self {
     case .leaf: return self
     case .split(let a, let b, let dir, let ratio):
       if case .split(_, _, _, _) = target {
-        // Compare structurally by ratio approximation (good enough for MVP)
         if abs(ratio - newRatio) < 0.5 {
           return .split(a, b, dir, newRatio)
         }

@@ -71,3 +71,11 @@ with XCode, follow the proper Apple Developer documentation in that case.
 4. If you would like to use HockeyApp, change the scheme to Blink Hockey, and add HockeyID with your AppID string to info.plist.
 
 Make sure "Blink" is the selected Scheme for compilation. As a standard XCode project, just run it with Cmd-R.
+
+## Ruby tooling
+This repo uses the xcodeproj ruby gem for project file mutations.
+Install: `cd /Users/heesung/workspace/remoteTerminal && bundle install`
+Use: `bundle exec ruby -rxcodeproj -e '...'`
+
+Note: If bundle install fails due to ruby 2.6 + bundler version mismatch, use the GEM_HOME fallback:
+`GEM_HOME=/Users/heesung/.gem/ruby/2.6.0 GEM_PATH=/Users/heesung/.gem/ruby/2.6.0 ruby -rxcodeproj -e '...'`

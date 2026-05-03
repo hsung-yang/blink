@@ -40,6 +40,7 @@ final class MoshBootstrapTests: XCTestCase {
   var cancellableBag: Set<AnyCancellable> = []
   
   func testMoshBootstrap() throws {
+    throw XCTSkip("KNOWN-002: testMoshBootstrap requires a live SSH server; times out in simulator environment")
     print("connecting...")
     
     let expectConn = self.expectation(description: "Connection established")
