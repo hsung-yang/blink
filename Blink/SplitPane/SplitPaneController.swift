@@ -35,7 +35,7 @@ class SplitPaneController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .black
-    _installNode(_root, in: view)
+    _installNode(_root, path: [], in: view)
     _activateTerm(activeTerm)
   }
 
@@ -111,11 +111,11 @@ class SplitPaneController: UIViewController {
     }
     view.subviews.forEach { $0.removeFromSuperview() }
     // Reinstall tree
-    _installNode(_root, in: view)
+    _installNode(_root, path: [], in: view)
     _activateTerm(activeTerm)
   }
 
-  private func _installNode(_ node: SplitNode<TermController>, in container: UIView) {
+  private func _installNode(_ node: SplitNode<TermController>, path: [Int], in container: UIView) {
     switch node {
     case .leaf(let term):
       addChild(term)
@@ -171,7 +171,7 @@ class SplitPaneController: UIViewController {
           guard let self, let container else { return }
           let total = container.bounds.width
           let newRatio = SplitNode<TermController>.clampedRatio(ratio + delta / total)
-          self._root = self._root.updateRatio(forNode: node, ratio: newRatio)
+          self._root = self._root.updateRatio(at: path, to: newRatio)
           self._relayout()
         }
       } else {
@@ -202,13 +202,13 @@ class SplitPaneController: UIViewController {
           guard let self, let container else { return }
           let total = container.bounds.height
           let newRatio = SplitNode<TermController>.clampedRatio(ratio + delta / total)
-          self._root = self._root.updateRatio(forNode: node, ratio: newRatio)
+          self._root = self._root.updateRatio(at: path, to: newRatio)
           self._relayout()
         }
       }
 
-      _installNode(first, in: firstContainer)
-      _installNode(second, in: secondContainer)
+      _installNode(first, path: path + [0], in: firstContainer)
+      _installNode(second, path: path + [1], in: secondContainer)
     }
   }
 }
@@ -260,20 +260,18 @@ indirect enum SplitNode<Leaf: AnyObject> {
     }
   }
 
-  func updateRatio(forNode target: SplitNode<Leaf>, ratio newRatio: CGFloat) -> SplitNode<Leaf> {
-    switch self {
-    case .leaf: return self
-    case .split(let a, let b, let dir, let ratio):
-      if case .split(_, _, _, _) = target {
-        if abs(ratio - newRatio) < 0.5 {
-          return .split(a, b, dir, newRatio)
-        }
-      }
-      return .split(
-        a.updateRatio(forNode: target, ratio: newRatio),
-        b.updateRatio(forNode: target, ratio: newRatio),
-        dir, ratio
-      )
+  /// Update the ratio at a specific path through the tree.
+  /// Path is a sequence of 0/1 child indices (0 = first/left/top, 1 = second/right/bottom).
+  /// Empty path targets self. No-op if path traverses a leaf or self is a leaf.
+  func updateRatio(at path: [Int], to newRatio: CGFloat) -> SplitNode<Leaf> {
+    guard case .split(let a, let b, let dir, let ratio) = self else { return self }
+    if path.isEmpty {
+      return .split(a, b, dir, newRatio)
     }
+    let next = Array(path.dropFirst())
+    if path[0] == 0 {
+      return .split(a.updateRatio(at: next, to: newRatio), b, dir, ratio)
+    }
+    return .split(a, b.updateRatio(at: next, to: newRatio), dir, ratio)
   }
 }

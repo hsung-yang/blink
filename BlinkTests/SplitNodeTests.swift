@@ -113,38 +113,66 @@ final class SplitNodeTests: XCTestCase {
     XCTAssertEqual(result, 0.85, accuracy: 0.001)
   }
 
-  // MARK: - updateRatio regression (KNOWN-001)
+  // MARK: - updateRatio path-based addressing (KNOWN-001 fix)
 
-  func testUpdateRatioOnlyModifiesTargetSubtree() throws {
-    // KNOWN-001: updateRatio(forNode:) at SplitPaneController.swift:259-274 uses an
-    // abs(ratio-newRatio)<0.5 guard that matches by value, not by identity.
-    // In a tree where two sibling splits have ratios close enough to pass the guard,
-    // both are mutated instead of only the targeted one.
-    try XCTSkipIf(true, "KNOWN-001")
-
+  func testUpdateRatioOnlyModifiesTargetSubtree() {
     let a = MockTerm(1), b = MockTerm(2), c = MockTerm(3), d = MockTerm(4)
 
     // Build: split(split(a,b,h,0.4), split(c,d,h,0.4), v, 0.5)
-    // Both inner splits have ratio 0.4; newRatio 0.6 satisfies abs(0.4-0.6)<0.5 for both.
+    // Path [0] addresses the left subtree.
     let leftSplit: SplitNode<MockTerm> = .split(.leaf(a), .leaf(b), .horizontal, 0.4)
     let rightSplit: SplitNode<MockTerm> = .split(.leaf(c), .leaf(d), .horizontal, 0.4)
     let root: SplitNode<MockTerm> = .split(leftSplit, rightSplit, .vertical, 0.5)
 
-    let updated = root.updateRatio(forNode: leftSplit, ratio: 0.6)
+    let updated = root.updateRatio(at: [0], to: 0.6)
 
-    // Only the left subtree should have ratio 0.6; right must remain 0.4
-    guard case .split(let newLeft, let newRight, _, _) = updated else {
+    guard case .split(let newLeft, let newRight, _, let rootRatio) = updated else {
       XCTFail("expected split root"); return
     }
+    XCTAssertEqual(rootRatio, 0.5, accuracy: 0.001, "root ratio unchanged")
     if case .split(_, _, _, let lr) = newLeft {
-      XCTAssertEqual(lr, 0.6, accuracy: 0.001, "left subtree ratio should be updated")
-    } else {
-      XCTFail("expected split left")
-    }
+      XCTAssertEqual(lr, 0.6, accuracy: 0.001, "left subtree ratio updated")
+    } else { XCTFail("expected split left") }
     if case .split(_, _, _, let rr) = newRight {
-      XCTAssertEqual(rr, 0.4, accuracy: 0.001, "right subtree ratio must NOT be changed")
-    } else {
-      XCTFail("expected split right")
+      XCTAssertEqual(rr, 0.4, accuracy: 0.001, "right subtree ratio unchanged")
+    } else { XCTFail("expected split right") }
+  }
+
+  func testUpdateRatioAtRoot() {
+    let a = MockTerm(1), b = MockTerm(2)
+    let root: SplitNode<MockTerm> = .split(.leaf(a), .leaf(b), .horizontal, 0.5)
+    let updated = root.updateRatio(at: [], to: 0.7)
+    if case .split(_, _, _, let r) = updated {
+      XCTAssertEqual(r, 0.7, accuracy: 0.001)
+    } else { XCTFail("expected split") }
+  }
+
+  func testUpdateRatioDeepPath() {
+    let a = MockTerm(1), b = MockTerm(2), c = MockTerm(3), d = MockTerm(4)
+    // Build: split( split(a, split(b,c,h,0.4), v, 0.3), .leaf(d), h, 0.5)
+    // Path [0, 1] targets the inner split(b,c,...).
+    let bcSplit: SplitNode<MockTerm> = .split(.leaf(b), .leaf(c), .horizontal, 0.4)
+    let leftSplit: SplitNode<MockTerm> = .split(.leaf(a), bcSplit, .vertical, 0.3)
+    let root: SplitNode<MockTerm> = .split(leftSplit, .leaf(d), .horizontal, 0.5)
+
+    let updated = root.updateRatio(at: [0, 1], to: 0.8)
+
+    guard case .split(let newLeft, _, _, _) = updated else {
+      XCTFail("expected split root"); return
     }
+    guard case .split(_, let newBC, _, let leftRatio) = newLeft else {
+      XCTFail("expected split left"); return
+    }
+    XCTAssertEqual(leftRatio, 0.3, accuracy: 0.001, "left subtree ratio unchanged")
+    if case .split(_, _, _, let bcRatio) = newBC {
+      XCTAssertEqual(bcRatio, 0.8, accuracy: 0.001, "deep target ratio updated")
+    } else { XCTFail("expected split bc") }
+  }
+
+  func testUpdateRatioOnLeafIsNoOp() {
+    let a = MockTerm(1)
+    let root: SplitNode<MockTerm> = .leaf(a)
+    let updated = root.updateRatio(at: [], to: 0.7)
+    XCTAssertEqual(updated.allLeaves().map { $0.id }, [1])
   }
 }
