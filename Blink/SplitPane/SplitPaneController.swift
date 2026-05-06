@@ -72,7 +72,7 @@ class SplitPaneController: UIViewController {
   // MARK: Private
 
   private func _makeNewTerm() -> TermController {
-    let term = TermController(sceneRole: .windowApplication)
+    let term = TermController(sceneRole: .windowApplication, sessionPayload: MCPSessionPayload(params: MCPParams()))
     SessionRegistry.shared.track(session: term)
     return term
   }
