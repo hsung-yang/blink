@@ -69,6 +69,9 @@ class SpaceController: UIViewController {
   private var _blinkMenu: BlinkMenu? = nil
   private var _bottomTapAreaView = UIView()
 
+  private let _tabBarModel = TabBarModel()
+  private var _tabBarVC: UIHostingController<TabBarView>?
+
   // Snips Input Mode tracking
   private var _isSnipsInputModeActive: Bool = false {
     didSet {
@@ -200,16 +203,24 @@ class SpaceController: UIViewController {
   }
   
   private func setupOverlayConstraints() {
-    // Overlay positioning to wrap safe areas and keyboard.
     let keyboardGuide = view.keyboardLayoutGuide
-    
     _overlay.translatesAutoresizingMaskIntoConstraints = false
-
+    let topAnchor = _tabBarVC?.view.bottomAnchor ?? view.safeAreaLayoutGuide.topAnchor
     NSLayoutConstraint.activate([
-      _overlay.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      _overlay.topAnchor.constraint(equalTo: topAnchor),
       _overlay.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
       _overlay.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
       _overlay.bottomAnchor.constraint(equalTo: keyboardGuide.topAnchor)
+    ])
+  }
+
+  private func _setupViewportsConstraints() {
+    guard let v = _viewportsController.view, let tabBar = _tabBarVC?.view else { return }
+    NSLayoutConstraint.activate([
+      v.topAnchor.constraint(equalTo: tabBar.bottomAnchor),
+      v.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      v.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      v.bottomAnchor.constraint(equalTo: view.bottomAnchor)
     ])
   }
   
@@ -244,9 +255,8 @@ class SpaceController: UIViewController {
     addChild(_viewportsController)
     
     if let v = _viewportsController.view {
-      v.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      v.translatesAutoresizingMaskIntoConstraints = false
       v.layoutMargins = .zero
-      v.frame = view.bounds
       view.addSubview(v)
     }
     
@@ -256,8 +266,10 @@ class SpaceController: UIViewController {
     view.addSubview(_overlay)
     
     _registerForNotifications()
-    
+
+    _setupTabBar()
     setupOverlayConstraints()
+    _setupViewportsConstraints()
     
     if _viewportsKeys.isEmpty {
       _newShellAction(animated: false)
@@ -491,6 +503,7 @@ Please go to your subscriptions and cancel one of them!
   }
   
   private func _displayHUD() {
+    _syncTabBar()
     _hud?.hide(animated: false)
 
     // Check capability flag instead of mode directly
@@ -1178,6 +1191,7 @@ extension SpaceController {
     term.delegate = self
     _viewportsKeys.append(term.meta.key)
     _moveToShell(key: term.meta.key, animated: animated)
+    _syncTabBar()
   }
   
   private func _moveToShell(idx: Int, animated: Bool = true) {
@@ -1329,4 +1343,138 @@ extension SpaceController {
     }
   }
 
+}
+
+// MARK: Tab Bar
+
+extension SpaceController {
+
+  private func _setupTabBar() {
+    let vc = UIHostingController(rootView: TabBarView(model: _tabBarModel))
+    vc.view.translatesAutoresizingMaskIntoConstraints = false
+    vc.view.backgroundColor = .clear
+    addChild(vc)
+    view.addSubview(vc.view)
+    vc.didMove(toParent: self)
+    _tabBarVC = vc
+
+    NSLayoutConstraint.activate([
+      vc.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      vc.view.heightAnchor.constraint(equalToConstant: kTabBarHeight)
+    ])
+
+    _tabBarModel.onSelect = { [weak self] key in self?._moveToShell(key: key, animated: true) }
+    _tabBarModel.onCreate = { [weak self] in self?._newShellAction() }
+    _tabBarModel.onClose  = { [weak self] key in
+      guard let self, self._currentKey == key else { return }
+      self._closeCurrentSpace()
+    }
+  }
+
+  private func _syncTabBar() {
+    _tabBarModel.tabs = _viewportsKeys.compactMap { key -> TabBarModel.Tab? in
+      let term: TermController? = SessionRegistry.shared.sessionFromIndexWith(key: key)
+      return TabBarModel.Tab(id: key, title: term?.terminalTitle ?? "")
+    }
+    _tabBarModel.currentID = _currentKey
+  }
+}
+
+// MARK: - Tab Bar UI
+
+private let kTabBarHeight: CGFloat = 36
+
+private final class TabBarModel: ObservableObject {
+  struct Tab: Identifiable {
+    let id: UUID
+    var title: String
+  }
+
+  @Published var tabs: [Tab] = []
+  @Published var currentID: UUID?
+
+  var onSelect: ((UUID) -> Void)?
+  var onCreate: (() -> Void)?
+  var onClose: ((UUID) -> Void)?
+}
+
+private struct TabBarView: View {
+  @ObservedObject var model: TabBarModel
+
+  var body: some View {
+    HStack(spacing: 0) {
+      ScrollViewReader { proxy in
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 2) {
+            ForEach(model.tabs) { tab in
+              TabItem(
+                title: tab.title.isEmpty ? "shell" : tab.title,
+                isActive: tab.id == model.currentID,
+                onTap: { model.onSelect?(tab.id) },
+                onClose: tab.id == model.currentID ? { model.onClose?(tab.id) } : nil
+              )
+              .id(tab.id)
+            }
+          }
+          .padding(.horizontal, 6)
+        }
+        .onChange(of: model.currentID, perform: { newID in
+          guard let newID else { return }
+          withAnimation(.easeInOut(duration: 0.15)) { proxy.scrollTo(newID, anchor: .center) }
+        })
+      }
+
+      Divider().frame(height: 16).opacity(0.4)
+
+      Button { model.onCreate?() } label: {
+        Image(systemName: "plus")
+          .font(.system(size: 13, weight: .medium))
+          .frame(width: 36, height: kTabBarHeight)
+          .foregroundStyle(.white.opacity(0.65))
+      }
+      .padding(.trailing, 2)
+    }
+    .frame(height: kTabBarHeight)
+    .background(Color(white: 0.08))
+    .overlay(alignment: .bottom) {
+      Rectangle().fill(Color.white.opacity(0.12)).frame(height: 0.5)
+    }
+  }
+
+  private struct TabItem: View {
+    let title: String
+    let isActive: Bool
+    let onTap: () -> Void
+    let onClose: (() -> Void)?
+
+    var body: some View {
+      HStack(spacing: 4) {
+        Text(title)
+          .font(.system(size: 11, weight: isActive ? .medium : .regular))
+          .lineLimit(1)
+          .frame(maxWidth: 100, alignment: .leading)
+          .foregroundStyle(isActive ? Color.white : Color.white.opacity(0.5))
+
+        if let onClose {
+          Button(action: onClose) {
+            Image(systemName: "xmark")
+              .font(.system(size: 8, weight: .bold))
+              .foregroundStyle(.white.opacity(0.55))
+              .frame(width: 14, height: 14)
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      .padding(.horizontal, 8)
+      .frame(height: 28)
+      .background(
+        RoundedRectangle(cornerRadius: 5)
+          .fill(isActive ? Color.white.opacity(0.14) : Color.clear)
+      )
+      .contentShape(Rectangle())
+      .onTapGesture(perform: onTap)
+    }
+  }
 }

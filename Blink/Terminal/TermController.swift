@@ -192,6 +192,7 @@ class TermController: UIViewController {
   }
 
   @objc var termView: TermView { _termView }
+  var terminalTitle: String? { _termView.title }
 
   private var _sessionPayload: TermSessionPayload? = nil
   private var _session: Session? { _sessionPayload?.session }
