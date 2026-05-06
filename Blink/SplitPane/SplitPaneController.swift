@@ -85,10 +85,10 @@ class SplitPaneController: UIViewController {
   private func _close(leaf: TermController) {
     guard _root.allLeaves().count > 1 else { return }
     _root = _root.close(leaf: leaf) ?? _root
-    let remaining = _root.allLeaves()
-    let next = remaining.first
+    if activeTerm === leaf {
+      activeTerm = _root.allLeaves().first
+    }
     _relayout()
-    _activateTerm(next)
     leaf.terminate()
     SessionRegistry.shared.remove(forKey: leaf.meta.key)
   }
