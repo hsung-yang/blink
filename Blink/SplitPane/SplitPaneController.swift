@@ -7,6 +7,10 @@
 
 import UIKit
 
+extension Notification.Name {
+  static let splitPaneDidChangeFocus = Notification.Name("splitPaneDidChangeFocus")
+}
+
 @objc enum SplitDirection: Int {
   case horizontal // side by side (left | right)
   case vertical   // stacked (top / bottom)
@@ -100,6 +104,7 @@ class SplitPaneController: UIViewController {
       leaf.view?.layer.borderColor = (leaf === term) ? UIColor.systemBlue.cgColor : nil
     }
     term?.activateInput()
+    NotificationCenter.default.post(name: .splitPaneDidChangeFocus, object: self)
   }
 
   private func _relayout() {

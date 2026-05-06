@@ -336,6 +336,12 @@ Please go to your subscriptions and cancel one of them!
     nc.addObserver(self, selector: #selector(_UISceneWillEnterForegroundNotification(_:)),
                    name: UIScene.willEnterForegroundNotification, object: nil)
 
+    nc.addObserver(self, selector: #selector(_splitPaneFocusChanged),
+                   name: .splitPaneDidChangeFocus, object: nil)
+  }
+
+  @objc private func _splitPaneFocusChanged() {
+    _syncTabBar()
   }
                    
   @objc func _UISceneDidEnterBackgroundNotification(_ n: Notification) {
@@ -1374,9 +1380,16 @@ extension SpaceController {
   }
 
   private func _syncTabBar() {
+    let splitCtrl = _currentSplitController()
     _tabBarModel.tabs = _viewportsKeys.compactMap { key -> TabBarModel.Tab? in
-      let term: TermController? = SessionRegistry.shared.sessionFromIndexWith(key: key)
-      return TabBarModel.Tab(id: key, title: term?.terminalTitle ?? "")
+      let title: String
+      if key == _currentKey, let activeTitle = splitCtrl?.activeTerm?.terminalTitle {
+        title = activeTitle
+      } else {
+        let term: TermController? = SessionRegistry.shared.sessionFromIndexWith(key: key)
+        title = term?.terminalTitle ?? ""
+      }
+      return TabBarModel.Tab(id: key, title: title)
     }
     _tabBarModel.currentID = _currentKey
   }
