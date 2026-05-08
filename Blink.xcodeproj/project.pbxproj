@@ -472,6 +472,7 @@
 		D6F1B45083FD40B60B2992B0 /* ShortcutsHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A59A420DC9242F9E946E4A /* ShortcutsHelpView.swift */; };
 		DC59D92FE8F7813EA3370A11 /* BlinkLoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD9EA215271F83B400874007 /* BlinkLoggingTests.swift */; };
 		E12948D4FB3FD9411A07D670 /* SplitDividerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07F29C4DAE3E70961AA7264 /* SplitDividerView.swift */; };
+		5496C1CA60BF4D2CB2F789CD /* QuickActionsHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0B1C09D8A9440BB12900D2 /* QuickActionsHandle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1000,6 +1001,7 @@
 		C9B2E0121D6B612300B89F69 /* BKSettingsFileDownloader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BKSettingsFileDownloader.h; sourceTree = "<group>"; };
 		C9B2E0131D6B612300B89F69 /* BKSettingsFileDownloader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BKSettingsFileDownloader.m; sourceTree = "<group>"; };
 		D07F29C4DAE3E70961AA7264 /* SplitDividerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SplitDividerView.swift; sourceTree = "<group>"; };
+		BE0B1C09D8A9440BB12900D2 /* QuickActionsHandle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsHandle.swift; sourceTree = "<group>"; };
 		D2011CD626A6FF9F002E4E85 /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		D2036B6223967F2F0013D2A3 /* BindingConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingConfigView.swift; sourceTree = "<group>"; };
 		D20394A929E6B30400FB337F /* Receipt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Receipt.swift; sourceTree = "<group>"; };
@@ -1510,6 +1512,7 @@
 				D235579622CE07D20094AADB /* Blink-bridge.h */,
 				D2AD9ADD22DB80DE00861F66 /* SessionRegistry.swift */,
 				D2887A5522DC676F00701BD5 /* SpaceController.swift */,
+				BE0B1C09D8A9440BB12900D2 /* QuickActionsHandle.swift */,
 				D2887A5D22DCA6D500701BD5 /* SceneDelegate.swift */,
 				D248E67522DDDF130057FE67 /* UIStateRestorable.swift */,
 				D2BC514C2355C3AE0034FDD4 /* History.swift */,
@@ -3713,6 +3716,7 @@
 				D22278002A26204900D4C708 /* Accumulators.swift in Sources */,
 				3B4E10816034C21D6C5AEBC5 /* SplitPaneController.swift in Sources */,
 				E12948D4FB3FD9411A07D670 /* SplitDividerView.swift in Sources */,
+				5496C1CA60BF4D2CB2F789CD /* QuickActionsHandle.swift in Sources */,
 				6491B0266A2A1EC3E4E19E64 /* ConnectionsView.swift in Sources */,
 				D6F1B45083FD40B60B2992B0 /* ShortcutsHelpView.swift in Sources */,
 			);

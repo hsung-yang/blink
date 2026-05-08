@@ -45,7 +45,10 @@ const BlinkActionID BlinkActionChangeLayout = @"blink-change-layout";
 const BlinkActionID BlinkActionToggleLayoutLock = @"blink-toggle-layout-lock";
 const BlinkActionID BlinkActionToggleGeoTrack = @"blink-toggle-geo-track";
 const BlinkActionID BlinkActionToggleCompactActions = @"blink-toggle-compact-actions";
-const BlinkActionID BlinkActionConnections = @"blink-connections";
+const BlinkActionID BlinkActionConnections       = @"blink-connections";
+const BlinkActionID BlinkActionSplitHorizontal   = @"blink-split-horizontal";
+const BlinkActionID BlinkActionSplitVertical     = @"blink-split-vertical";
+const BlinkActionID BlinkActionClosePane         = @"blink-close-pane";
 const BlinkActionID BlinkActionLayoutFill = @"blink-layout-fill";
 const BlinkActionID BlinkActionLayoutFit = @"blink-layout-fit";
 const BlinkActionID BlinkActionLayoutCover = @"blink-layout-cover";
@@ -328,6 +331,33 @@ const CGFloat MENU_PADDING = 10.0;
     }];
   }
   
+  if (elementID == BlinkActionSplitHorizontal) {
+    return [UIAction
+            actionWithTitle:noTitle ? @"" : @"Split →"
+            image:[UIImage systemImageNamed:@"rectangle.split.2x1"]
+            identifier:elementID handler:^(__kindof UIAction * _Nonnull action) {
+      [[delegate spaceController] splitHorizontalAction];
+    }];
+  }
+
+  if (elementID == BlinkActionSplitVertical) {
+    return [UIAction
+            actionWithTitle:noTitle ? @"" : @"Split ↓"
+            image:[UIImage systemImageNamed:@"rectangle.split.1x2"]
+            identifier:elementID handler:^(__kindof UIAction * _Nonnull action) {
+      [[delegate spaceController] splitVerticalAction];
+    }];
+  }
+
+  if (elementID == BlinkActionClosePane) {
+    return [UIAction
+            actionWithTitle:noTitle ? @"" : @"Close Pane"
+            image:[UIImage systemImageNamed:@"rectangle.on.rectangle.slash"]
+            identifier:elementID handler:^(__kindof UIAction * _Nonnull action) {
+      [[delegate spaceController] closeSplitPaneAction];
+    }];
+  }
+
   if (elementID == BlinkActionToggleGeoTrack) {
     UIAction *action = [UIAction
                         actionWithTitle:noTitle ? @"" : @"Geo"

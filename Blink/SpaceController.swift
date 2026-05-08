@@ -67,7 +67,7 @@ class SpaceController: UIViewController {
   
   private var _snippetsVC: SnippetsViewController? = nil
   private var _blinkMenu: BlinkMenu? = nil
-  private var _bottomTapAreaView = UIView()
+  private let _quickActionsHandle = QuickActionsHandle()
 
   private let _tabBarModel = TabBarModel()
   private var _tabBarVC: UIHostingController<TabBarView>?
@@ -162,10 +162,17 @@ class SpaceController: UIViewController {
       }
     }
     let windowBounds = window.bounds
-    let height: CGFloat = 22
-    _bottomTapAreaView.frame = CGRect(x: windowBounds.width * 0.5 - 250, y: windowBounds.height - height, width: 250 * 2, height: height)
-//    _bottomTapAreaView.backgroundColor = UIColor.red
-    self.view.bringSubviewToFront(_bottomTapAreaView);
+    #if !targetEnvironment(macCatalyst)
+    let handleSize = CGSize(width: 60, height: 36)
+    let safeBottom = view.safeAreaInsets.bottom
+    _quickActionsHandle.frame = CGRect(
+      x: windowBounds.width * 0.5 - handleSize.width * 0.5,
+      y: windowBounds.height - safeBottom - handleSize.height - 8,
+      width: handleSize.width,
+      height: handleSize.height
+    )
+    self.view.bringSubviewToFront(_quickActionsHandle)
+    #endif
     
   }
   
@@ -281,12 +288,11 @@ class SpaceController: UIViewController {
       _viewportsController.setViewControllers([term], direction: .forward, animated: false)
     }
         
-    self.view.addSubview(_bottomTapAreaView)
-    
-    let doubleTap = UITapGestureRecognizer(target: self, action: #selector(toggleQuickActionsAction))
-    doubleTap.numberOfTapsRequired = 2
-    doubleTap.numberOfTouchesRequired = 1
-    _bottomTapAreaView.addGestureRecognizer(doubleTap)
+    #if !targetEnvironment(macCatalyst)
+    self.view.addSubview(_quickActionsHandle)
+    let singleTap = UITapGestureRecognizer(target: self, action: #selector(toggleQuickActionsAction))
+    _quickActionsHandle.addGestureRecognizer(singleTap)
+    #endif
     
     NotificationCenter.default.addObserver(self, selector: #selector(_geoTrackStateChanged), name: NSNotification.Name.BLGeoTrackStateChange, object: nil)
     
@@ -833,6 +839,10 @@ extension SpaceController {
     _currentSplitController()?.closeActive()
   }
 
+  @objc func splitHorizontalAction() { _splitCurrentPane(.horizontal) }
+  @objc func splitVerticalAction()   { _splitCurrentPane(.vertical) }
+  @objc func closeSplitPaneAction()  { _closeSplitPane() }
+
   @objc func closeShellAction() {
     _closeCurrentSpace()
   }
@@ -1075,31 +1085,33 @@ extension SpaceController {
       _blinkMenu = nil
       UIView.animate(withDuration: 0.15) {
         menu.alpha = 0
+        self._quickActionsHandle.alpha = 1
       } completion: { _ in
         menu.removeFromSuperview()
       }
     } else {
+      _quickActionsHandle.alpha = 0
       let menu = BlinkMenu()
       self.view.addSubview(menu.tapToCloseView)
-      
+
       var ids: [BlinkActionID] = []
-      ids.append(contentsOf:  [.connections, .snippets, .tabClose, .tabCreate])
-      
+      ids.append(contentsOf: [.connections, .snippets, .tabClose, .tabCreate])
+      ids.append(contentsOf: [.splitHorizontal, .splitVertical, .closePane])
       if DeviceInfo.shared().hasCorners {
-        ids.append(contentsOf:  [.layoutMenu])
+        ids.append(contentsOf: [.layoutMenu])
       }
-      ids.append(contentsOf:  [.toggleLayoutLock, .toggleGeoTrack])
+      ids.append(contentsOf: [.toggleLayoutLock, .toggleGeoTrack])
       menu.delegate = receiver;
       menu.build(withIDs: ids, andAppearance: [:])
       _blinkMenu = menu
       self.view.addSubview(menu)
       let size = self.view.frame.size;
       let menuSize = menu.layout(for: size)
-      
+
       let finalMenuFrame = CGRect(x: size.width * 0.5 - menuSize.width * 0.5, y: _overlay.frame.maxY - menuSize.height - 20, width: menuSize.width, height: menuSize.height)
-      
-      menu.frame = CGRect(origin: CGPoint(x: finalMenuFrame.minX, y: _overlay.frame.maxY + 10), size: finalMenuFrame.size);
-      
+
+      menu.frame = CGRect(origin: CGPoint(x: finalMenuFrame.minX, y: _overlay.frame.maxY + 10), size: finalMenuFrame.size)
+
       UIView.animate(withDuration: 0.25) {
         menu.frame = finalMenuFrame
       }
