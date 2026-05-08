@@ -114,6 +114,15 @@ struct PageInfo: Identifiable {
     image: "intro-build-horizontal",
     verticalImage: "intro-build-vertical"
   )
+
+  static let splitPaneInfo = PageInfo(
+    title: "SPLIT PANES",
+    linkText: Text("READ DOCS"),
+    url: URL(string: "https://docs.blink.sh")!,
+    info: Text("Divide your screen into up to 4 panes. Press **⌘D** to split side by side, **⌘|** to split top/bottom. **⌘⇧W** closes the active pane. **⌘[** / **⌘]** moves focus between panes. Tap the **▬ pill handle** for the Quick Actions menu."),
+    compactInfo: Text("⌘D split horizontal • ⌘| split vertical • ⌘⇧W close • ⌘[ / ⌘] focus"),
+    image: "intro-windows"
+  )
 }
 
 struct WalkthroughProgressButtons: View {
@@ -219,6 +228,7 @@ struct WalkthroughView: View {
   @Environment(\.dynamicTypeSize) var dynamicTypeSize
   let pages: [PageInfo] = [
     PageInfo.multipleTerminalsInfo,
+    PageInfo.splitPaneInfo,
     PageInfo.hostsKeysEverywhereInfo,
     PageInfo.sshMoshToolsInfo,
     PageInfo.blinkCodeInfo,

@@ -69,6 +69,13 @@ int help_main(int argc, char *argv[]) {
     @"  whatsnew: Discover new features.",
     @"  exit: Close this shell.",
     @"",
+    @"Split Panes:",
+    @"  ⌘D: Split horizontally (side by side).",
+    @"  ⌘|: Split vertically (top / bottom).",
+    @"  ⌘⇧W: Close active pane.",
+    @"  ⌘[  /  ⌘]: Focus previous / next pane.",
+    @"  Tap pill handle (▬): Open Quick Actions menu to split.",
+    @"",
     @"Gestures:",
     @"  ✌️ tap -> New Terminal.  ",
     @"  👆 tap -> Mouse click.  ",
@@ -91,9 +98,7 @@ int help_main(int argc, char *argv[]) {
     @"    C-x (change selection point)",
     @"  OTHER: arrows and fingers",
     @"",
-    @"Docs: https://blink.sh/docs",
-    @"",
-    
+
  ] componentsJoinedByString:@"\n"];
  
   puts(help.UTF8String);

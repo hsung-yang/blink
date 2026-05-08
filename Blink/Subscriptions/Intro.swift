@@ -425,12 +425,12 @@ struct PurchaseCompletedView: View {
       VStack(spacing: 8) {
         // TODO Same as with Build
         Spacer()
-        Text("WELCOME TO BLINK SHELL!")
+        Text("WELCOME TO REMOTE TERMINAL!")
           .font(ctx.offeringHeaderFont())
           .foregroundColor(BlinkColors.blinkText)
           .multilineTextAlignment(.center)
           .padding(.bottom, 30)
-        Text("Your device is small, but with Blink, it can take on Big Jobs. Let's get to work!")
+        Text("SSH, split panes, and Claude Code — optimized for iPad and Mac. Let's get to work!")
           .font(ctx.offeringSubheaderFont())
           .foregroundColor(BlinkColors.blinkText)
           .multilineTextAlignment(.center)
