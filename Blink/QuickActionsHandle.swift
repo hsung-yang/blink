@@ -14,6 +14,9 @@ final class QuickActionsHandle: UIView {
 
   override init(frame: CGRect) {
     super.init(frame: frame)
+    accessibilityIdentifier = "quick-actions-handle"
+    isAccessibilityElement = true
+    accessibilityLabel = "Quick Actions"
     _blur.layer.cornerRadius = 10
     _blur.layer.cornerCurve = .continuous
     _blur.clipsToBounds = true
@@ -37,6 +40,6 @@ final class QuickActionsHandle: UIView {
 
   // Extend touch target beyond visual frame so the tiny pill is easy to hit.
   override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-    bounds.insetBy(dx: -10, dy: -12).contains(point)
+    bounds.insetBy(dx: -20, dy: -24).contains(point)
   }
 }

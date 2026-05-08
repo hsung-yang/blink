@@ -164,10 +164,9 @@ class SpaceController: UIViewController {
     let windowBounds = window.bounds
     #if !targetEnvironment(macCatalyst)
     let handleSize = CGSize(width: 60, height: 36)
-    let safeBottom = view.safeAreaInsets.bottom
     _quickActionsHandle.frame = CGRect(
       x: windowBounds.width * 0.5 - handleSize.width * 0.5,
-      y: windowBounds.height - safeBottom - handleSize.height - 8,
+      y: _overlay.frame.maxY - handleSize.height - 8,
       width: handleSize.width,
       height: handleSize.height
     )
