@@ -58,6 +58,7 @@ class SpaceController: UIViewController {
   
   private var _viewportsKeys = [UUID]()
   private var _currentKey: UUID? = nil
+  private var _splitControllers: [UUID: SplitPaneController] = [:]
   
   private var _hud: MBProgressHUD? = nil
   
@@ -347,6 +348,7 @@ Please go to your subscriptions and cancel one of them!
 
   @objc private func _splitPaneFocusChanged() {
     _syncTabBar()
+    _attachInputToCurrentTerm()
   }
                    
   @objc func _UISceneDidEnterBackgroundNotification(_ n: Notification) {
@@ -466,6 +468,7 @@ Please go to your subscriptions and cancel one of them!
     }
     currentTerm()?.delegate = nil
     SessionRegistry.shared.remove(forKey: currentKey)
+    _splitControllers.removeValue(forKey: currentKey)
     _viewportsKeys.remove(at: idx)
     if _viewportsKeys.isEmpty {
       _newShellAction(animated: false)
@@ -473,21 +476,23 @@ Please go to your subscriptions and cancel one of them!
     }
 
     let direction: UIPageViewController.NavigationDirection
-    let term: TermController
-    
+    let nextKey: UUID
+
     if idx < _viewportsKeys.endIndex {
       direction = .forward
-      term = SessionRegistry.shared[_viewportsKeys[idx]]
+      nextKey = _viewportsKeys[idx]
     } else {
       direction = .reverse
-      term = SessionRegistry.shared[_viewportsKeys[idx - 1]]
+      nextKey = _viewportsKeys[idx - 1]
     }
+    let term: TermController = SessionRegistry.shared[nextKey]
     term.bgColor = view.backgroundColor ?? .black
-    
-    self._currentKey = term.meta.key
-    
+    let vc: UIViewController = _splitControllers[nextKey] ?? term
+
+    self._currentKey = nextKey
+
     _spaceControllerAnimating = true
-    _viewportsController.setViewControllers([term], direction: direction, animated: true) { (didComplete) in
+    _viewportsController.setViewControllers([vc], direction: direction, animated: true) { (didComplete) in
       self._displayHUD()
       if attachInput {
         self._attachInputToCurrentTerm()
@@ -614,12 +619,21 @@ extension SpaceController: UIPageViewControllerDelegate {
       return
     }
 
-    guard let termController = pageViewController.viewControllers?.first as? TermController
-    else {
+    let vc = pageViewController.viewControllers?.first
+    let tabKey: UUID?
+    let activeTerm: TermController?
+    if let split = vc as? SplitPaneController {
+      tabKey = _splitControllers.first(where: { $0.value === split })?.key
+      activeTerm = split.activeTerm
+    } else if let ctrl = vc as? TermController {
+      tabKey = ctrl.meta.key
+      activeTerm = ctrl
+    } else {
       return
     }
-    termController.resumeIfNeeded()
-    _currentKey = termController.meta.key
+    guard let tabKey else { return }
+    activeTerm?.resumeIfNeeded()
+    _currentKey = tabKey
     _displayHUD()
     _attachInputToCurrentTerm()
 
@@ -629,18 +643,26 @@ extension SpaceController: UIPageViewControllerDelegate {
 // MARK: UIPageViewControllerDataSource
 extension SpaceController: UIPageViewControllerDataSource {
   private func _controller(controller: UIViewController, advancedBy: Int) -> UIViewController? {
-    guard let ctrl = controller as? TermController else {
+    let key: UUID
+    if let split = controller as? SplitPaneController,
+       let splitKey = _splitControllers.first(where: { $0.value === split })?.key {
+      key = splitKey
+    } else if let ctrl = controller as? TermController {
+      key = ctrl.meta.key
+    } else {
       return nil
     }
-    let key = ctrl.meta.key
     guard
       let idx = _viewportsKeys.firstIndex(of: key)?.advanced(by: advancedBy),
       _viewportsKeys.indices.contains(idx)
     else {
       return nil
     }
-    
+
     let newKey = _viewportsKeys[idx]
+    if let split = _splitControllers[newKey] {
+      return split
+    }
     let newCtrl: TermController = SessionRegistry.shared[newKey]
     newCtrl.delegate = self
     //newCtrl.layoutProvider = self
@@ -827,8 +849,9 @@ extension SpaceController {
   private func _splitCurrentPane(_ direction: SplitDirection) {
     if let split = _currentSplitController() {
       split.splitActive(direction)
-    } else if let term = currentTerm() {
+    } else if let term = currentTerm(), let key = _currentKey {
       let split = SplitPaneController(term: term)
+      _splitControllers[key] = split
       _viewportsController.setViewControllers([split], direction: .forward, animated: false)
       split.splitActive(direction)
     }
@@ -1245,12 +1268,13 @@ extension SpaceController {
     }
     
     let term: TermController = SessionRegistry.shared[key]
+    let vc: UIViewController = _splitControllers[key] ?? term
     let direction: UIPageViewController.NavigationDirection = currentIdx < idx ? .forward : .reverse
 
     _spaceControllerAnimating = true
-    _viewportsController.setViewControllers([term], direction: direction, animated: animated) { (didComplete) in
+    _viewportsController.setViewControllers([vc], direction: direction, animated: animated) { (didComplete) in
       term.resumeIfNeeded()
-      self._currentKey = term.meta.key
+      self._currentKey = key
       self._displayHUD()
       self._attachInputToCurrentTerm()
       self._spaceControllerAnimating = false
